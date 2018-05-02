@@ -20,28 +20,19 @@ import com.android.volley.toolbox.Volley;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.w3c.dom.Text;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.net.HttpURLConnection;
-import java.net.URL;
-
-import java.nio.charset.Charset;
 import java.util.Calendar;
 
 public class MainActivity extends AppCompatActivity {
-    //private EditText input;
+    private RequestQueue mQueue;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        
+
         final Button button = findViewById(R.id.button3);
+        mQueue = Volley.newRequestQueue(this);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(final View v) {
@@ -51,27 +42,6 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-    }
-
-    private static String readAll(Reader rd) throws IOException {
-        StringBuilder sb = new StringBuilder();
-        int cp;
-        while ((cp = rd.read()) != -1) {
-            sb.append((char) cp);
-        }
-        return sb.toString();
-    }
-
-    public static JSONObject readJsonFromUrl(String url) throws IOException, JSONException {
-        InputStream is = new URL(url).openStream();
-        try {
-            BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
-            String jsonText = readAll(rd);
-            JSONObject json = new JSONObject(jsonText);
-            return json;
-        } finally {
-            is.close();
-        }
     }
 
     void startButton() {
@@ -127,14 +97,19 @@ public class MainActivity extends AppCompatActivity {
                 fortuneValue = fortuneValue * 33 +
                         (int) inputString.toCharArray()[i] * (10 * month +day);
             }
+            int messageValue = 1;
+            for (int i = 0; i < inputString.toCharArray().length; i++) {
+                messageValue = messageValue * Integer.parseInt(inputString) +
+                        (int) inputString.toCharArray()[i] * (month + 10 * day);
+            }
             int fortuneValue1 = fortuneValue % 100;
-            final int fortuneValue2 = fortuneValue;
+            final int messageValue1 = messageValue;
             if (fortuneValue1 < 0) {
                 fortuneValue1 += 100;
             }
             String fortuneValueString1 = String.valueOf(fortuneValue1);
             textView2.setText(fortuneValueString1.toCharArray(), 0, fortuneValueString1.length());
-            /**
+
             JsonArrayRequest jsonArrayRequest = new JsonArrayRequest(
                     Request.Method.GET,
                     "http://fortunecookieapi.herokuapp.com/v1/fortunes?limit=&skip=&page=",
@@ -143,35 +118,24 @@ public class MainActivity extends AppCompatActivity {
                         @Override
                         public void onResponse(final JSONArray response) {
                             try {
-                                System.out.println(response + "weird");
-                                int i = fortuneValue2 % response.length();
+                                int i = messageValue1 % response.length();
                                 if (i < 0) {
                                     i += response.length();
                                 }
                                 JSONObject messageObject = response.getJSONObject(i);
                                 String message = messageObject.getString("message");
-                                System.out.println(message + "weird");
                                 textView7.setText(message.toCharArray(), 0, message.length());
                             } catch (JSONException e) {
                                 e.printStackTrace();
                             }
-                            /**
-                             JSONParser parer = new JSONParser();
-                             JsonArray result = parser.parse(json).getAsJsonArray();
-                             JsonObject message = result.getJSONObject(0).getAsJsonObject("message");
-
-                            //JSONArray jsonarray = response.getJSONArray("message");
                         }
                     }, new Response.ErrorListener() {
                 @Override
                 public void onErrorResponse(VolleyError error) {
                     error.printStackTrace();
                 }
-            }
-            );
-            */
-            JSONObject json = readJsonFromUrl("https://graph.facebook.com/19292868552");
-            System.out.println(json.toString());
+            });
+            mQueue.add(jsonArrayRequest);
         } catch (Exception e) {
             e.printStackTrace();
         }
